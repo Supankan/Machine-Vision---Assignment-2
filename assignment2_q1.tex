@@ -1,0 +1,72 @@
+\documentclass[12pt]{article}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{geometry}
+
+\geometry{a4paper, margin=1in}
+
+\title{Machine Vision - Assignment 2}
+\author{Supankan}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\section*{Question 1}
+
+We are given a dataset in \texttt{lines.csv} which represents three point scatters conforming to three lines. The first five rows reveal that the coordinates of the points for the three lines are organized into columns $(x_1, x_2, x_3, y_1, y_2, y_3)$. 
+
+\subsection*{(a) Total Least Squares on the First Line}
+
+To fit a line strictly using the data corresponding to the first line (the $x_1$ and $y_1$ columns), we perform Total Least Squares (TLS). This involves centralizing the coordinates by subtracting their mean and then performing Principal Component Analysis (PCA) or Singular Value Decomposition (SVD) on the centered data matrix. The singular vector associated with the smallest singular value provides the optimal normal vector $(a, b)$ of the fitted line $ax + by + d = 0$. 
+
+By computing this on the first line's data, we obtain the following parameters for the line equation:
+\begin{align*}
+    a &= 0.7736 \\
+    b &= -0.6337 \\
+    d &= -3.7942
+\end{align*}
+This defines the line:
+\[ 0.7736x - 0.6337y - 3.7942 = 0 \]
+Or in the standard $y = mx + c$ format:
+\[ y = 1.2207x - 5.9872 \]
+
+\subsection*{(b) Fitting Three Lines using RANSAC}
+
+Now, treating all points collectively as a single dataset (by flattening all X columns and Y columns), we run the RANSAC (Random Sample Consensus) algorithm to iteratively find the three lines. The process is as follows:
+\begin{enumerate}
+    \item Randomly sample two distinct points to form a line hypothesis.
+    \item Calculate the perpendicular distance of all available points to this line.
+    \item Count the number of inliers (points within a specified distance threshold).
+    \item Retain the line with the largest consensus set (most inliers).
+    \item Mask (remove) the winning inliers from the dataset.
+    \item Repeat the process on the remaining points to discover the next line.
+\end{enumerate}
+
+After running this iterative process (with an inlier threshold of $0.2$, and roughly 2000 iterations per line), and refining each consensus set with TLS, the resulting parameters for the three discovered lines are:
+
+\paragraph{Line 1:}
+\begin{itemize}
+    \item Parameters: $a = -0.7284$, $b = 0.6851$, $d = -0.6595$
+    \item Equation: $-0.7284x + 0.6851y - 0.6595 = 0 \implies y = 1.0631x + 0.9625$
+    \item Inlier count: $43$ points
+\end{itemize}
+
+\paragraph{Line 2:}
+\begin{itemize}
+    \item Parameters: $a = -0.3801$, $b = -0.9250$, $d = 2.0074$
+    \item Equation: $-0.3801x - 0.9250y + 2.0074 = 0 \implies y = -0.4109x + 2.1703$
+    \item Inlier count: $39$ points
+\end{itemize}
+
+\paragraph{Line 3:}
+\begin{itemize}
+    \item Parameters: $a = 0.7894$, $b = -0.6139$, $d = -3.5935$
+    \item Equation: $0.7894x - 0.6139y - 3.5935 = 0 \implies y = 1.2859x - 5.8537$
+    \item Inlier count: $36$ points
+\end{itemize}
+
+\textit{Note: As RANSAC is a randomized algorithm, the exact parameters and ordering of the extracted lines may vary slightly across different runs depending on the initialization and chosen threshold.}
+
+\end{document}
