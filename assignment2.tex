@@ -68,5 +68,32 @@ After running this iterative process (with an inlier threshold of $0.2$, and rou
 \end{itemize}
 
 \textit{Note: As RANSAC is a randomized algorithm, the exact parameters and ordering of the extracted lines may vary slightly across different runs depending on the initialization and chosen threshold.}
+\vspace{1cm}
+\section*{Question 2}
+
+We are tasked with finding the physical sizes of a pair of earrings shown in an image, given the following camera parameters:
+\begin{itemize}
+    \item Focal length ($f$): $8$ mm
+    \item Distance to object ($Z$): $720$ mm
+    \item Pixel size: $2.2 \, \mu\text{m} = 0.0022$ mm
+\end{itemize}
+
+Assuming a standard pinhole camera model where the optical axis is perpendicular to the imaging plane (so the object is fronto-parallel), the magnification $M$ is given by:
+\[ M = \frac{f}{Z} \]
+
+The physical size of the object $X$ relates to its size on the sensor $x$ as:
+\[ X = x \cdot \frac{Z}{f} \]
+Since the sensor size $x$ can be expressed in terms of the number of pixels spanning the object and the pixel size:
+\[ X = (\text{pixels} \times \text{pixel\_size}) \cdot \frac{Z}{f} \]
+
+By writing a simple Python script (using OpenCV) to analyze the image \texttt{earrings.jpg}, we threshold the image to find the bounding boxes of the two earrings. The script detects that both earrings span a bounding box of $382 \times 400$ pixels.
+
+Applying the formula:
+\begin{align*}
+    \text{Width} &= (382 \times 0.0022\text{ mm}) \times \frac{720\text{ mm}}{8\text{ mm}} = 0.8404\text{ mm} \times 90 = 75.64 \text{ mm} \\
+    \text{Height} &= (400 \times 0.0022\text{ mm}) \times \frac{720\text{ mm}}{8\text{ mm}} = 0.8800\text{ mm} \times 90 = 79.20 \text{ mm}
+\end{align*}
+
+Thus, the physical dimensions of each earring are approximately \textbf{75.64 mm $\times$ 79.20 mm}.
 
 \end{document}
