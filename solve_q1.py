@@ -92,3 +92,44 @@ for i in range(3):
     if b != 0:
         print(f"  y = {-a/b:.4f}x + {-d/b:.4f}")
 
+# Plotting
+import matplotlib.pyplot as plt
+
+# Part A Plot
+plt.figure()
+plt.scatter(x1, y1, color='blue', label='Data points (first line)')
+if normal1[1] != 0:
+    m = -normal1[0] / normal1[1]
+    c = -(-np.dot(normal1, centroid1)) / normal1[1]
+    x_vals = np.array([np.min(x1), np.max(x1)])
+    y_vals = m * x_vals + c
+    plt.plot(x_vals, y_vals, color='red', label='TLS Fit')
+plt.title('TLS Fit on First Line Data')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend()
+plt.grid(True)
+plt.savefig('q1_part_a.png')
+plt.close()
+
+# Part B Plot
+plt.figure()
+plt.scatter(X_all, Y_all, color='gray', alpha=0.5, label='All Data points')
+colors = ['red', 'green', 'blue']
+for i, line in enumerate(lines):
+    a, b, d, inliers_count = line
+    if b != 0:
+        m = -a / b
+        c = -d / b
+        x_vals = np.array([np.min(X_all), np.max(X_all)])
+        y_vals = m * x_vals + c
+        plt.plot(x_vals, y_vals, color=colors[i], label=f'RANSAC Line {i+1}')
+plt.title('RANSAC Fit on All Data')
+plt.xlabel('x')
+plt.ylabel('y')
+plt.legend()
+plt.grid(True)
+plt.savefig('q1_part_b.png')
+plt.close()
+
+print("Graphs saved as q1_part_a.png and q1_part_b.png")
