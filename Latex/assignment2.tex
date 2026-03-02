@@ -46,6 +46,12 @@ This defines the line:
 Or in the standard $y = mx + c$ format:
 \[ y = 1.2207x - 5.9872 \]
 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{../Materials/q1_part_a.png}
+    \caption{Total Least Squares fit on the first line data.}
+\end{figure}
+
 \subsection*{(b) Fitting Three Lines using RANSAC}
 
 Now, treating all points collectively as a single dataset (by flattening all X columns and Y columns), we run the RANSAC (Random Sample Consensus) algorithm to iteratively find the three lines. The process is iteratively implemented in \texttt{solve\_q1.py} as follows:
@@ -109,10 +115,16 @@ After running this iterative process (with an inlier threshold of $0.2$, and rou
 
 \paragraph{Line 3:}
 \begin{itemize}
-    \item Parameters: $a = 0.7894$, $b = -0.6139$, $d = -3.5935$
-    \item Equation: $0.7894x - 0.6139y - 3.5935 = 0 \implies y = 1.2859x - 5.8537$
+    \item Parameters: $a = -0.7890$, $b = 0.6145$, $d = 3.6636$
+    \item Equation: $-0.7890x + 0.6145y + 3.6636 = 0 \implies y = 1.2840x - 5.9623$
     \item Inlier count: $36$ points
 \end{itemize}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{../Materials/q1_part_b.png}
+    \caption{RANSAC multi-line fit on all data.}
+\end{figure}
 
 \textit{Note: As RANSAC is a randomized algorithm, the exact parameters and ordering of the extracted lines may vary slightly across different runs depending on the initialization and chosen threshold.}
 \vspace{1cm}
