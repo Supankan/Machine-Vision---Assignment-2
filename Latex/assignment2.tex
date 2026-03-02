@@ -2,16 +2,30 @@
 \usepackage{amsmath}
 \usepackage{graphicx}
 \usepackage{geometry}
+\usepackage{listings}
+\usepackage{subcaption}
+\usepackage{float}
 
 \geometry{a4paper, margin=1in}
 
+\lstset{
+  basicstyle=\ttfamily\small,
+  breaklines=true,
+  frame=single,
+  language=Python,
+  showstringspaces=false
+}
+
 \title{Machine Vision - Assignment 2}
-\author{Supankan}
+\author{Supankan (Index: TBA) \\ \small{GitHub Repository: \texttt{https://github.com/Supankan/Machine-Vision---Assignment-2}}}
 \date{\today}
 
 \begin{document}
 
 \maketitle
+
+\section*{Introduction}
+This report details the approaches and methodologies used to solve Assignment 2 for the Machine Vision (IN4640) module. It covers total least squares, RANSAC multi-line fitting, pinhole camera dimensions, and homography applications using OpenCV. Source code and materials are hosted on the GitHub repository linked above.
 
 \section*{Question 1}
 
@@ -34,7 +48,40 @@ Or in the standard $y = mx + c$ format:
 
 \subsection*{(b) Fitting Three Lines using RANSAC}
 
-Now, treating all points collectively as a single dataset (by flattening all X columns and Y columns), we run the RANSAC (Random Sample Consensus) algorithm to iteratively find the three lines. The process is as follows:
+Now, treating all points collectively as a single dataset (by flattening all X columns and Y columns), we run the RANSAC (Random Sample Consensus) algorithm to iteratively find the three lines. The process is iteratively implemented in \texttt{solve\_q1.py} as follows:
+\begin{lstlisting}
+def ransac_line_fit(points, n_iterations=1000, threshold=0.1):
+    best_line = None
+    best_inliers = []
+    
+    n_points = len(points)
+    
+    for _ in range(n_iterations):
+        # Sample 2 distinct points
+        idx = np.random.choice(n_points, 2, replace=False)
+        p1, p2 = points[idx]
+        
+        # Line equation ax + by + d = 0
+        diff = p2 - p1
+        if np.linalg.norm(diff) < 1e-6: continue
+            
+        a, b = -diff[1], diff[0]
+        norm = np.hypot(a, b)
+        a, b = a / norm, b / norm
+        d = -(a * p1[0] + b * p1[1])
+        
+        # distance of points to the line
+        distances = np.abs(a * points[:, 0] + b * points[:, 1] + d)
+        inlier_idx = np.where(distances < threshold)[0]
+        
+        if len(inlier_idx) > len(best_inliers):
+            best_inliers = inlier_idx
+            best_line = (a, b, d)
+            
+    return best_line, best_inliers
+\end{lstlisting}
+
+This algorithm handles iterating through the parameters:
 \begin{enumerate}
     \item Randomly sample two distinct points to form a line hypothesis.
     \item Calculate the perpendicular distance of all available points to this line.
@@ -86,7 +133,13 @@ The physical size of the object $X$ relates to its size on the sensor $x$ as:
 Since the sensor size $x$ can be expressed in terms of the number of pixels spanning the object and the pixel size:
 \[ X = (\text{pixels} \times \text{pixel\_size}) \cdot \frac{Z}{f} \]
 
-By writing a simple Python script (using OpenCV) to analyze the image \texttt{earrings.jpg}, we threshold the image to find the bounding boxes of the two earrings. The script detects that both earrings span a bounding box of $382 \times 400$ pixels.
+By writing a Python script to analyze the image \texttt{earrings.jpg}, we threshold the image to find the bounding boxes of the two earrings. The script confirms both earrings span a bounding box of $382 \times 400$ pixels.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.5\textwidth]{../Materials/earrings_annotated.jpg}
+    \caption{Detected bounding boxes for Earrings}
+\end{figure}
 
 Applying the formula:
 \begin{align*}
@@ -95,20 +148,32 @@ Applying the formula:
 \end{align*}
 
 Thus, the physical dimensions of each earring are approximately \textbf{75.64 mm $\times$ 79.20 mm}.
+
 \vspace{1cm}
 \section*{Question 3}
 
-To superimpose a country flag onto the cricket turf shown in the image, we must apply a planar homography. A homography is a projective transformation that maps points from one plane to another. In our case, it maps the rectangular corners of the 2D flag image to the perspective-distorted four corners of the turf in the target image.
+To superimpose a country flag onto the cricket turf shown in the image, we apply a planar homography mapping the rectangular corners of the 2D flag image to the perspective-distorted four corners of the turf.
 
-The process is programmatically executed as follows:
-\begin{enumerate}
-    \item \textbf{Point selection:} We use OpenCV's \texttt{setMouseCallback} function to allow the user to click the four corners of the turf in the image. Let these four points be the destination points $P_{\text{dst}}$. The order is assumed to be top-left, top-right, bottom-right, and bottom-left.
-    \item \textbf{Source points:} We define the source points $P_{\text{src}}$ as the true four corners of the downloaded flag image: $(0,0)$, $(W-1,0)$, $(W-1,H-1)$, and $(0,H-1)$, where $W$ and $H$ are the width and height of the flag image respectively.
-    \item \textbf{Homography estimation:} We compute the homography matrix $H$ using the Direct Linear Transform (DLT) algorithm via OpenCV's \texttt{findHomography($P_{\text{src}}$, $P_{\text{dst}}$)}. 
-    \item \textbf{Image warping:} We apply \texttt{warpPerspective} to transform the flat flag image using $H$ so that it matches the geometry of the pitch.
-    \item \textbf{Masking and Blending:} We use a polygonal mask (created by \texttt{fillConvexPoly}) spanning the selected region to zero-out the original pitch area. The warped flag is then inserted. Finally, to produce a slightly more realistic superimposition over the grass, we optionally blend the warped flag with the original image using a weighted sum (\texttt{addWeighted}).
-\end{enumerate}
+The program calculates the transform and blends it seamlessly into the pitch:
+\begin{lstlisting}
+        # Destination points (the user's clicks)
+        pts_dst = np.array(points, dtype=float)
+        
+        # Source points (corners of the flag image)
+        h, w = flag_img.shape[:2]
+        pts_src = np.array([[0, 0], [w - 1, 0], [w - 1, h - 1], [0, h - 1]], dtype=float)
+        
+        # Calculate Homography
+        H, status = cv2.findHomography(pts_src, pts_dst)
+        
+        # Warp source image to destination based on homography
+        temp_flag_warped = cv2.warpPerspective(flag_img, H, (img.shape[1], img.shape[0]))
+\end{lstlisting}
 
-Running the \texttt{solve\_q3.py} script allows the user to interactively click these points and saves the resulting superimposed image.
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.7\textwidth]{../Materials/turf_with_flag.jpg}
+    \caption{Superimposed country flag (Sri Lanka) on the cricket turf using Homography.}
+\end{figure}
 
 \end{document}
