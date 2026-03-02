@@ -95,5 +95,20 @@ Applying the formula:
 \end{align*}
 
 Thus, the physical dimensions of each earring are approximately \textbf{75.64 mm $\times$ 79.20 mm}.
+\vspace{1cm}
+\section*{Question 3}
+
+To superimpose a country flag onto the cricket turf shown in the image, we must apply a planar homography. A homography is a projective transformation that maps points from one plane to another. In our case, it maps the rectangular corners of the 2D flag image to the perspective-distorted four corners of the turf in the target image.
+
+The process is programmatically executed as follows:
+\begin{enumerate}
+    \item \textbf{Point selection:} We use OpenCV's \texttt{setMouseCallback} function to allow the user to click the four corners of the turf in the image. Let these four points be the destination points $P_{\text{dst}}$. The order is assumed to be top-left, top-right, bottom-right, and bottom-left.
+    \item \textbf{Source points:} We define the source points $P_{\text{src}}$ as the true four corners of the downloaded flag image: $(0,0)$, $(W-1,0)$, $(W-1,H-1)$, and $(0,H-1)$, where $W$ and $H$ are the width and height of the flag image respectively.
+    \item \textbf{Homography estimation:} We compute the homography matrix $H$ using the Direct Linear Transform (DLT) algorithm via OpenCV's \texttt{findHomography($P_{\text{src}}$, $P_{\text{dst}}$)}. 
+    \item \textbf{Image warping:} We apply \texttt{warpPerspective} to transform the flat flag image using $H$ so that it matches the geometry of the pitch.
+    \item \textbf{Masking and Blending:} We use a polygonal mask (created by \texttt{fillConvexPoly}) spanning the selected region to zero-out the original pitch area. The warped flag is then inserted. Finally, to produce a slightly more realistic superimposition over the grass, we optionally blend the warped flag with the original image using a weighted sum (\texttt{addWeighted}).
+\end{enumerate}
+
+Running the \texttt{solve\_q3.py} script allows the user to interactively click these points and saves the resulting superimposed image.
 
 \end{document}
