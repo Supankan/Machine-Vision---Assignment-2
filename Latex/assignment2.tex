@@ -33,7 +33,7 @@ We are given a dataset in \texttt{lines.csv} which represents three point scatte
 
 \subsection*{(a) Total Least Squares on the First Line}
 
-To fit a line strictly using the data corresponding to the first line (the $x_1$ and $y_1$ columns), we perform Total Least Squares (TLS). This involves centralizing the coordinates by subtracting their mean and then performing Principal Component Analysis (PCA) or Singular Value Decomposition (SVD) on the centered data matrix. The singular vector associated with the smallest singular value provides the optimal normal vector $(a, b)$ of the fitted line $ax + by + d = 0$. 
+To fit a line strictly using the data corresponding to the first line (the $x_1$ and $y_1$ columns), we perform Total Least Squares (TLS). A total of 45 points were extracted from these columns to perform this fit. This involves centralizing the coordinates by subtracting their mean and then performing Principal Component Analysis (PCA) or Singular Value Decomposition (SVD) on the centered data matrix. The singular vector associated with the smallest singular value provides the optimal normal vector $(a, b)$ of the fitted line $ax + by + d = 0$. 
 
 By computing this on the first line's data, we obtain the following parameters for the line equation:
 \begin{align*}
@@ -45,6 +45,8 @@ This defines the line:
 \[ 0.7736x - 0.6337y - 3.7942 = 0 \]
 Or in the standard $y = mx + c$ format:
 \[ y = 1.2207x - 5.9872 \]
+
+\textbf{Fitting Quality:} Visually, the single TLS line cleanly partitions the first cluster of data points, with a very low average perpendicular residual. However, being a least-squares algorithm, it remains highly sensitive to outliers, which necessitates a robust approach when multiple lines or noise are present in the same data space.
 
 \begin{figure}[H]
     \centering
@@ -120,10 +122,13 @@ After running this iterative process (with an inlier threshold of $0.2$, and rou
     \item Inlier count: $36$ points
 \end{itemize}
 
+\textbf{Insight \& Sensitivity:} 
+While the TLS in Part (a) efficiently modeled a single point cluster, calculating a single global TLS on all 135 points here would fail catastrophically since least-squares cannot handle multi-modal distributions (multiple lines). RANSAC inherently acts as a robust estimator filtering out "outlier" clusters as it hones in on one specific line at a time. The algorithm was run with 2000 iterations to guarantee high theoretical probability of picking a pure inlier sample pair, and a distance threshold of 0.2 was selected to capture points belonging to the same abstract model without mistakenly merging closely-spaced distinct clusters.
+
 \begin{figure}[H]
     \centering
     \includegraphics[width=0.7\textwidth]{../Materials/q1_part_b.png}
-    \caption{RANSAC multi-line fit on all data.}
+    \caption{RANSAC multi-line fit on all 135 points.}
 \end{figure}
 
 \textit{Note: As RANSAC is a randomized algorithm, the exact parameters and ordering of the extracted lines may vary slightly across different runs depending on the initialization and chosen threshold.}
@@ -137,7 +142,7 @@ We are tasked with finding the physical sizes of a pair of earrings shown in an 
     \item Pixel size: $2.2 \, \mu\text{m} = 0.0022$ mm
 \end{itemize}
 
-Assuming a standard pinhole camera model where the optical axis is perpendicular to the imaging plane (so the object is fronto-parallel), the magnification $M$ is given by:
+\textbf{Justification of Assumptions:} We assume a standard pinhole camera model where the optical axis is strictly perpendicular to the imaging plane. This assumption is highly reasonable and practically necessary because the earrings appear to be lying completely flat on a surface parallel to the sensor, meaning that depth $Z$ is constant across the entire span of the object. Under this fronto-parallel geometry, perspective distortions (such as foreshortening) are nullified, and the magnification $M$ is uniform given by:
 \[ M = \frac{f}{Z} \]
 
 The physical size of the object $X$ relates to its size on the sensor $x$ as:
@@ -145,7 +150,7 @@ The physical size of the object $X$ relates to its size on the sensor $x$ as:
 Since the sensor size $x$ can be expressed in terms of the number of pixels spanning the object and the pixel size:
 \[ X = (\text{pixels} \times \text{pixel\_size}) \cdot \frac{Z}{f} \]
 
-By writing a Python script to analyze the image \texttt{earrings.jpg}, we threshold the image to find the bounding boxes of the two earrings. The script confirms both earrings span a bounding box of $382 \times 400$ pixels.
+By writing a Python script to analyze the image \texttt{earrings.jpg}, we threshold the image to find the bounding boxes of the two earrings. The script confirms both earrings span an outer bounding box of $382 \times 400$ pixels. The outer bounding contour is chosen over the inner hole because the question asks for the overall macroscopic size of the earrings.
 
 \begin{figure}[H]
     \centering
@@ -153,18 +158,22 @@ By writing a Python script to analyze the image \texttt{earrings.jpg}, we thresh
     \caption{Detected bounding boxes for Earrings}
 \end{figure}
 
-Applying the formula:
+Applying the formula to these pixel dimensions:
 \begin{align*}
     \text{Width} &= (382 \times 0.0022\text{ mm}) \times \frac{720\text{ mm}}{8\text{ mm}} = 0.8404\text{ mm} \times 90 = 75.64 \text{ mm} \\
     \text{Height} &= (400 \times 0.0022\text{ mm}) \times \frac{720\text{ mm}}{8\text{ mm}} = 0.8800\text{ mm} \times 90 = 79.20 \text{ mm}
 \end{align*}
 
-Thus, the physical dimensions of each earring are approximately \textbf{75.64 mm $\times$ 79.20 mm}.
+Thus, the physical dimensions of each earring are calculated to be \textbf{75.64 mm $\times$ 79.20 mm}.
+
+\textbf{Measurement Uncertainty:} It should be explicitly noted that these are estimates. Uncertainty is introduced via image thresholding (where bright edge pixels might be eroded or dilated), the inherent discrete nature of pixel quantization rounding, and the sensitivity of the bounding box approximation to minor rotational orientation differences in how the earrings were placed.
 
 \vspace{1cm}
 \section*{Question 3}
 
-To superimpose a country flag onto the cricket turf shown in the image, we apply a planar homography mapping the rectangular corners of the 2D flag image to the perspective-distorted four corners of the turf.
+To superimpose a country flag onto the cricket turf shown in the image, we apply a planar homography mapping the rectangular corners of the 2D flag image to the perspective-distorted four corners of the turf. 
+
+\textbf{Geometric Justification:} A homography is an exact theoretical projection mapping between any two planes. This approach is valid here because the cricket pitch lies flat on the ground and thus forms a genuine 2D plane in 3D space.
 
 The program calculates the transform and blends it seamlessly into the pitch:
 \begin{lstlisting}
@@ -181,6 +190,10 @@ The program calculates the transform and blends it seamlessly into the pitch:
         # Warp source image to destination based on homography
         temp_flag_warped = cv2.warpPerspective(flag_img, H, (img.shape[1], img.shape[0]))
 \end{lstlisting}
+
+\textbf{Blending Discussion:} Instead of bluntly overwriting the turf pixels with the warped flag (which looks highly artificial), an alpha-blending technique (\texttt{cv2.addWeighted}) with a $0.4$ turf and $0.6$ flag weight setup was used. This preserves the underlying grass texture and lighting gradients, offering a much more natural-looking superimposition.
+
+\textbf{Point Selection Sensitivity:} It is also worth noting that homographies are highly sensitive to their correspondence points. If the four corners clicked by the user aren't perfectly aligned with the edges of the continuous pitch, the resulting perspective warp will skew the flag severely, mismatching the vanishing points of the actual scene.
 
 \begin{figure}[H]
     \centering
